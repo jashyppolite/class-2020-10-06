@@ -6,6 +6,8 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 library(tidyverse)
+#download.file("https://projects.fivethirtyeight.com/2020-election-forecast/",
+              destfile = "election.csv")
 ```
 
 
@@ -13,6 +15,30 @@ library(tidyverse)
 
 **Prompt:** Create a graphic of the posterior distribution of the [538 forecast](https://projects.fivethirtyeight.com/2020-election-forecast/) for Biden's electoral vote total. Recall the example given in Chapter 5 of *The Primer*.
 
+```{r}
+forecast <- read_csv("data_538/election-forecasts-2020/presidential_ev_probabilities_2020.csv",
+                     col_types = cols(cycle = col_double(),
+                                      branch = col_character(),
+                                      model = col_character(),
+                                      modeldate = col_character(),
+                                      candidate_inc = col_character(),
+                                      candidate_chal = col_character(),
+                                      candidate_3rd = col_logical(),
+                                      evprob_inc = col_double(),
+                                      evprob_chal = col_double(),
+                                      evprob_3rd = col_logical(),
+                                      total_ev = col_double(),
+                                      timestamp = col_character(),
+                                      simulations = col_double()
+))
+
+forecast %>%
+  ggplot(aes(x = total_ev, y = evprob_chal)) + geom_col(col = "steelblue2") +
+  labs(title = "Posterior Probability Distribution Baes on FiveThirtyEight Forecast",
+       subtitle = "Presidential Elections")
+  theme_classic()
+  
+```
 
 
 ### Scene 2
@@ -35,12 +61,43 @@ c) What does the actual Preceptor Table look like now?
 
 a) What is the probability that Biden wins more than 300 electoral votes?
 
+filter to only keep where bidens votes are above three hundred, sum the probs
+
+```{r}
+forecast %>%
+  select(total_ev, evprob_chal) %>%
+  filter(total_ev > 300) %>%
+  summarize(biden_300 = sum(evprob_chal))
+```
+
 b) What is the probability that Biden wins exactly 531 electoral votes? Is this answer consistent with your answer in a)?
+
+```{r}
+forecast %>%
+  select(total_ev, evprob_chal) %>%
+  filter(total_ev == 531) %>%
+  summarize(biden_531 = sum(evprob_chal))
+```
+
 
 c) What is the probability of a "very close" election, defined as Biden winning between 269 and 289 electoral votes, inclusive?
 
+
+```{r}
+forecast %>%
+  select(total_ev, evprob_chal) %>%
+  filter(total_ev >= 269 & total_ev <= 289) %>%
+  summarize(biden_269_289 = sum(evprob_chal))
+```
+
 d) How many unique electoral vote totals does 538 view as impossible for Biden to achieve? Some of these are truly impossible. Given an example of one of these. Why does 538 think that some vote totals, while theoretically possible, should be given zero probability in its posterior?
 
+```{r}
+forecast %>%
+  select(total_ev, evprob_chal) %>%
+  filter(evprob_chal == 0) %>%
+  summarize(impossible = length(unique(total_ev)))
+```
 
 
 
